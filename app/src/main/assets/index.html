@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PettyCash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        /* Custom scrollbar for cleanliness */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex justify-center overflow-hidden">
+
+<!-- App Container -->
+<div class="w-full max-w-md bg-white h-full shadow-2xl flex flex-col relative">
+
+    <!-- Header & Balance -->
+    <div class="bg-slate-900 text-white p-6 rounded-b-3xl shadow-lg z-10 shrink-0">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-lg font-semibold text-slate-300">Petty Cash</h1>
+            <span id="currentDate" class="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded-full"></span>
+        </div>
+
+        <div class="text-center py-2">
+            <p class="text-slate-400 text-sm mb-1 uppercase tracking-wider">Current Balance</p>
+            <h2 id="totalBalance" class="text-4xl font-bold tracking-tight">0.00</h2>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="flex justify-between mt-6 px-2 text-sm">
+            <div class="text-left">
+                <span class="block text-green-400 font-medium">Income</span>
+                <span id="totalIncome" class="font-bold">0.00</span>
+            </div>
+            <div class="text-right">
+                <span class="block text-red-400 font-medium">Expense</span>
+                <span id="totalExpense" class="font-bold">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons (Floating over the seam) -->
+    <div class="flex gap-4 px-6 -mt-6 z-20 justify-center">
+        <button onclick="openModal('income')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl shadow-lg transform transition active:scale-95 flex flex-col items-center justify-center gap-1">
+            <i class="fas fa-plus-circle text-2xl"></i>
+            <span class="font-bold">Income</span>
+        </button>
+        <button onclick="openModal('expense')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl shadow-lg transform transition active:scale-95 flex flex-col items-center justify-center gap-1">
+            <i class="fas fa-minus-circle text-2xl"></i>
+            <span class="font-bold">Expense</span>
+        </button>
+    </div>
+
+    <!-- Transaction List -->
+    <div class="flex-1 overflow-y-auto p-4 pt-4 pb-24" id="transactionListContainer">
+        <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 ml-1">Recent Transactions</h3>
+        <ul id="transactionList" class="space-y-3">
+            <!-- Transactions injected here -->
+        </ul>
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center h-40 text-gray-400">
+            <i class="fas fa-wallet text-4xl mb-2 text-gray-200"></i>
+            <p>No transactions yet</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Adding Entry -->
+<div id="entryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center fade-in">
+    <div class="bg-white w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl shadow-2xl slide-up">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-800">New Entry</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <form id="transactionForm" onsubmit="handleFormSubmit(event)">
+            <input type="hidden" id="entryType">
+
+            <div class="mb-4">
+                <label class="block text-gray-500 text-xs font-bold uppercase mb-2">Amount</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-3.5 text-gray-400 font-bold">Rs.</span>
+                    <input type="number" id="amountInput" step="0.01" inputmode="decimal" placeholder="0.00" required
+                           class="w-full bg-gray-100 text-gray-800 text-2xl font-bold pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-500 text-xs font-bold uppercase mb-2">Description</label>
+                <input type="text" id="descInput" placeholder="e.g. Office Supplies" required
+                       class="w-full bg-gray-100 text-gray-800 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full py-4 rounded-xl text-white font-bold text-lg shadow-md transform transition active:scale-95">
+                Save Transaction
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Custom Notification -->
+<div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center gap-2">
+    <i class="fas fa-check-circle text-green-400"></i> <span id="toastMsg">Success</span>
+</div>
+
+<script>
+    // --- State Management ---
+    let transactions = JSON.parse(localStorage.getItem('pettyCashData')) || [];
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        renderTransactions();
+        updateBalance();
+
+        // Set Date
+        const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', dateOptions);
+    });
+
+    // --- Core Logic ---
+
+    function updateBalance() {
+        const income = transactions
+            .filter(t => t.type === 'income')
+            .reduce((acc, t) => acc + t.amount, 0);
+
+        const expense = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((acc, t) => acc + t.amount, 0);
+
+        const total = income - expense;
+
+        // DOM Updates
+        document.getElementById('totalBalance').innerText = formatCurrency(total);
+        document.getElementById('totalIncome').innerText = "+" + formatCurrency(income);
+        document.getElementById('totalExpense').innerText = "-" + formatCurrency(expense);
+
+        // Dynamic color for balance
+        const balanceEl = document.getElementById('totalBalance');
+        if(total < 0) balanceEl.className = "text-4xl font-bold tracking-tight text-red-400";
+        else balanceEl.className = "text-4xl font-bold tracking-tight text-white";
+    }
+
+    function renderTransactions() {
+        const list = document.getElementById('transactionList');
+        const emptyState = document.getElementById('emptyState');
+        list.innerHTML = '';
+
+        if (transactions.length === 0) {
+            emptyState.classList.remove('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+
+            // Sort by date (newest first)
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            transactions.forEach(t => {
+                const isIncome = t.type === 'income';
+                const sign = isIncome ? '+' : '-';
+                const colorClass = isIncome ? 'text-green-600' : 'text-red-600';
+                const iconBg = isIncome ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
+                const icon = isIncome ? 'fa-arrow-down' : 'fa-arrow-up'; // Money in vs Money out
+
+                const li = document.createElement('li');
+                li.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center slide-up';
+                li.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center shrink-0">
+                            <i class="fas ${icon} text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-semibold text-gray-800 truncate">${t.description}</p>
+                            <p class="text-xs text-gray-400">${formatTime(t.date)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                        <span class="font-bold ${colorClass}">${sign}${formatCurrency(t.amount)}</span>
+                        <button onclick="deleteTransaction(${t.id})" class="text-gray-300 hover:text-red-400 transition p-1">
+                            <i class="fas fa-trash-alt text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        const description = document.getElementById('descInput').value;
+        const type = document.getElementById('entryType').value;
+
+        if (!amount || !description) return;
+
+        const newTransaction = {
+            id: Date.now(),
+            type: type,
+            amount: amount,
+            description: description,
+            date: new Date().toISOString()
+        };
+
+        transactions.unshift(newTransaction);
+        saveData();
+        updateBalance();
+        renderTransactions();
+        closeModal();
+        showToast('Added');
+    }
+
+    function deleteTransaction(id) {
+        if(confirm("Delete this entry?")) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveData();
+            updateBalance();
+            renderTransactions();
+        }
+    }
+
+
+    function saveData() {
+        localStorage.setItem('pettyCashData', JSON.stringify(transactions));
+    }
+
+    // --- Modal & UI Helpers ---
+
+    function openModal(type) {
+        const modal = document.getElementById('entryModal');
+        const title = document.getElementById('modalTitle');
+        const btn = document.getElementById('submitBtn');
+        const typeInput = document.getElementById('entryType');
+
+        // Reset form
+        document.getElementById('transactionForm').reset();
+
+        typeInput.value = type;
+        modal.classList.remove('hidden');
+
+        if (type === 'income') {
+            title.innerText = "Add Income";
+            title.className = "text-xl font-bold text-green-600";
+            btn.className = "w-full py-4 rounded-xl text-white font-bold text-lg shadow-md bg-green-500 hover:bg-green-600";
+            btn.innerText = "Add to Income";
+        } else {
+            title.innerText = "Add Expense";
+            title.className = "text-xl font-bold text-red-600";
+            btn.className = "w-full py-4 rounded-xl text-white font-bold text-lg shadow-md bg-red-500 hover:bg-red-600";
+            btn.innerText = "Add Expense";
+        }
+
+        // Auto focus amount
+        setTimeout(() => document.getElementById('amountInput').focus(), 100);
+    }
+
+    function closeModal() {
+        document.getElementById('entryModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click
+    document.getElementById('entryModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const msg = document.getElementById('toastMsg');
+        msg.innerText = message;
+
+        toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-[-20px]');
+        }, 3000);
+    }
+
+    function formatCurrency(num) {
+        return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(num);
+    }
+
+    function formatTime(isoString) {
+        const d = new Date(isoString);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.PettyCashApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <!-- Remove title bar / action bar -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:actionBarStyle">@null</item>
+
+        <!-- Fullscreen / edge-to-edge -->
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- Your status bar color -->
+        <item name="android:statusBarColor">#0f172a</item>
+
+        <!-- Status bar icons light or dark -->
+        <!-- true  = dark icons (use when background is light) -->
+        <!-- false = white icons (use when background is dark) -->
+        <item name="android:windowLightStatusBar">false</item>
+
+    </style>
+
+</resources>
