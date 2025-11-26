@@ -38,6 +38,11 @@ A simple, clean, mobile-friendly HTML-based Petty Cash management application de
 - Custom status bar color
 - Modern WindowInsets for system UI control
 
+## 📦 Download APK
+You can download the latest release of the PettyCash app here:
+
+➡️ **[Download PettyCash.apk](https://github.com/lakshithamadumal/PettyCash/releases/download/v1.0.0/PettyCash.apk)**
+
 ## 🛠 How to Build
 1. Clone project
 2. Place `index.html` inside `app/src/main/assets/`
